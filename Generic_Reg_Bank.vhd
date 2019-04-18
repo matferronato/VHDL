@@ -47,14 +47,14 @@ entity interface_upc_xgeth is
              BITS_N : integer := 3);
   	port
   	(
-      clk                     : in std_logic;
-  		reset					          : in std_logic;
+		clk                     : in std_logic;
+		reset					          : in std_logic;
 
-  		waddr				      : in std_logic_vector(BITS_N-1 downto 0);
-  		raddr				      : in std_logic_vector(BITS_N-1 downto 0);
-  		wdata				      : in std_logic_vector(SIZE-1 downto 0);
-  		rdata				      : out std_logic_vector(SIZE-1 downto 0);
-      ce				        : in std_logic;
+		waddr				      : in std_logic_vector(BITS_N-1 downto 0);
+		raddr				      : in std_logic_vector(BITS_N-1 downto 0);
+		wdata				      : in std_logic_vector(SIZE-1 downto 0);
+		rdata				      : out std_logic_vector(SIZE-1 downto 0);
+		ce				      : in std_logic
 
 	);
 end interface_upc_xgeth;

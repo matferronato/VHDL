@@ -12,20 +12,17 @@
 --and the reconding of the architecture, in order to transform it in a generic 
 --vhdl using 'if generate' statments
 
-
-
-
 library IEEE;
 use IEEE.std_logic_1164.all;
 
 entity full_adder is
            port (
-            data_in:	        in std_logic_vector(2 downto 0);
-            data_out:        out std_logic_vector(1 downto 0)
+            data_in  :	     in std_logic_vector(2 downto 0);
+            data_out :       out std_logic_vector(1 downto 0)
          );
 end full_adder;
 architecture arch_full_adder of full_adder is
-	signal intermidiate : std_logic_vector(1 downto 0);
+  signal intermidiate : std_logic_vector(1 downto 0);
 
   begin
 	intermidiate(0) <= data_in(0) xor (data_in(1) xor data_in(2));
@@ -43,13 +40,13 @@ use IEEE.numeric_std.all;
 
 entity unary_count_ones is
 	port (
-			data_out : OUT std_logic_vector(7 downto 0);
-			data_in : IN std_logic_vector(127 downto 0));
+		data_out : OUT std_logic_vector(7 downto 0);
+		data_in : IN std_logic_vector(127 downto 0));
 end unary_count_ones;
 
 architecture Behavioral of unary_count_ones is
 
-	   	  type array_2b is array (0 to 42) of std_logic_vector (1 downto 0);
+	type array_2b is array (0 to 42) of std_logic_vector (1 downto 0);
         signal bin2_array : array_2b;
 
         type array_3bin is array (0 to 21) of std_logic_vector (2 downto 0);
@@ -72,7 +69,7 @@ architecture Behavioral of unary_count_ones is
 begin
   temp <= data_in & '0';
 
-			   full_a0 : entity work.full_adder port map (data_in => temp(2 downto 0), data_out => bin2_array(0));
+         full_a0 : entity work.full_adder port map (data_in => temp(2 downto 0), data_out => bin2_array(0));
          un2bin : for i in 1 to 42 generate
           full_adr : entity work.full_adder port map (data_in => temp((i*3)+2 downto i*3), data_out => bin2_array(i));
          end generate un2bin;
@@ -86,7 +83,7 @@ begin
            bin4_array(k) <= ('0' & bin3_array((k*2)+1)) + ('0' & bin3_array((k*2)));
          end generate bin4;
 
- 		     bin5_array(5) <=  ('0' & bin4_array(10)) + "00000";
+         bin5_array(5) <=  ('0' & bin4_array(10)) + "00000";
  bin5:   for l in 0 to 4 generate
            bin5_array(l) <= ('0' & bin4_array((l*2)+1)) + ('0' & bin4_array((l*2)));
          end generate bin5;

@@ -47,7 +47,7 @@ use IEEE.std_logic_1164.all;
 use IEEE.std_logic_unsigned.all;
 use IEEE.numeric_std.all;
 
-entity LFSR_REC is
+entity LFSR_MATRIX is
   generic
   (
     DATA_SIZE   : integer := 128;
@@ -65,14 +65,13 @@ entity LFSR_REC is
     data_out            : out std_logic_vector(DATA_SIZE-1 downto 0)
 
   );
-end LFSR_REC;
+end LFSR_MATRIX;
 
-architecture arch_lfsr of LFSR_REC is
+architecture ARCH_LFSR_MATRIX of LFSR_MATRIX is
 
   -------------------------------------------------------------------------------
   -- Debug
   -------------------------------------------------------------------------------
-  attribute mark_debug : string;
   type lfsr_table is array (0 to PPL_SIZE-1, 0 to ((DATA_SIZE / PPL_SIZE)-1)) of std_logic_vector (DATA_SIZE-1 downto 0);
   signal reg_i           : std_logic_vector(DATA_SIZE-1 downto 0) := seed;
   signal linear_feedback : lfsr_table;
@@ -81,15 +80,15 @@ architecture arch_lfsr of LFSR_REC is
 
   begin
   
-  lfsr0_0 : entity work.lsfr_generic_reg_rec generic map (DATA_SIZE=> DATA_SIZE) port map (load_seed => load_seed, parallel_reg => reg_i, random => linear_feedback(0,0), poly => polynomial);
+  lfsr0_0 : entity work.lsfr_generic_reg generic map (DATA_SIZE=> DATA_SIZE) port map (load_seed => load_seed, parallel_reg => reg_i, random => linear_feedback(0,0), poly => polynomial);
   
-  generate_matrix_in : for k in 0 to PPL_SIZE-2 generate
-	lfsr_N : entity work.lsfr_generic_reg_rec generic map (DATA_SIZE=> DATA_SIZE) port map (load_seed => load_seed, parallel_reg => Delay_B(k), random => linear_feedback(k+1,0), poly => polynomial);
+  generate_matrix_in : for i in 0 to PPL_SIZE-2 generate
+	lfsr_N : entity work.lsfr_generic_reg generic map (DATA_SIZE=> DATA_SIZE) port map (load_seed => load_seed, parallel_reg => Delay_B(i), random => linear_feedback(i+1,0), poly => polynomial);
   end generate generate_matrix_in;
 
   generate_ppl : for i in 0 to  PPL_SIZE-1 generate
     generate_lfsr : for j in 1 to  ((DATA_SIZE / PPL_SIZE)-1)  generate
-        lfsrn : entity work.lsfr_generic_reg_rec generic map (DATA_SIZE=> DATA_SIZE)
+        lfsrn : entity work.lsfr_generic_reg generic map (DATA_SIZE=> DATA_SIZE)
                      port map (load_seed => load_seed, parallel_reg => linear_feedback(i,j-1), random => linear_feedback(i,j), poly => polynomial);
     end generate generate_lfsr;
   end generate generate_ppl;
@@ -97,22 +96,22 @@ architecture arch_lfsr of LFSR_REC is
  process (clock, reset_N)
  begin
    if reset_N = '0' then
-      reg_i <= seed
-	  for l in 0 to PPL_SIZE-2 loop
-		Delay_B(l) <= (others=>'0');
+      reg_i <= seed;
+	  for i in 0 to PPL_SIZE-2 loop
+		Delay_B(i) <= (others=>'0');
 	  end loop;
     elsif rising_edge(clock) then
 		if start = '1' then
 		  reg_i <= data_in;
-		  for m in 0 to PPL_SIZE-2 loop
-			Delay_B(m) <= linear_feedback(m,(DATA_SIZE/PPL_SIZE)-1);
+		  for i in 0 to PPL_SIZE-2 loop
+			Delay_B(i) <= linear_feedback(i,(DATA_SIZE/PPL_SIZE)-1);
 		  end loop;
 		end if;
     end if;
   end process;
 
    data_out <= (others => '0') when reset_N = '0' else
-               linear_feedback(3,31);
+               linear_feedback(3,(DATA_SIZE/PPL_SIZE)-1);
 
 
-end arch_lfsr;
+end ARCH_LFSR_MATRIX;

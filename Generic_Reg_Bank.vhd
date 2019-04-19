@@ -41,37 +41,38 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.std_logic_unsigned.all;
 
-entity interface_upc_xgeth is
-    generic( SIZE   : integer :=  32;
+entity RegisterBank is
+    generic( DATA_SIZE : integer :=  32;
              REG_N  : integer :=  8;
              BITS_N : integer := 3);
   	port
   	(
-		clk                     : in std_logic;
-		reset					          : in std_logic;
-
-		waddr				      : in std_logic_vector(BITS_N-1 downto 0);
-		raddr				      : in std_logic_vector(BITS_N-1 downto 0);
-		wdata				      : in std_logic_vector(SIZE-1 downto 0);
-		rdata				      : out std_logic_vector(SIZE-1 downto 0);
-		ce				      : in std_logic
+		clk                : in std_logic;
+		reset		   : in std_logic;
+		waddr		   : in std_logic_vector(BITS_N-1 downto 0);
+		raddr		   : in std_logic_vector(BITS_N-1 downto 0);
+		wdata		   : in std_logic_vector(DATA_SIZE-1 downto 0);
+		rdata		   : out std_logic_vector(DATA_SIZE-1 downto 0);
+		ce		   : in std_logic
 
 	);
-end interface_upc_xgeth;
+end RegisterBank;
 
-architecture behavioral of interface_upc_xgeth is
-  signal wen            : std_logic_vector(REG_N-1 downto 0);
-  
-  type regnbits_out is array (0 to REG_N-1) of std_logic_vector(SIZE-1 downto 0);
+architecture arch_RegisterBank of RegisterBank is
+
+  signal wen : std_logic_vector(REG_N-1 downto 0); 
+  type regnbits_out is array (0 to REG_N-1) of std_logic_vector(DATA_SIZE-1 downto 0);
   signal registers_q_out: regnbits_out;
   
 begin
 
   reg_bank: for i in 0 to REG_N-1 generate
-        registers: entity work.generic_registers port map(ck=>clk, rst=>reset, ce=>ce, wen=>wen(i), D=>wdata, Q=>registers_q_out(i));
+        registers: entity work.generic_registers 
+		generic map(SIZE => DATA_SIZE)
+		port map(ck=>clk, rst=>reset, ce=>ce, wen=>wen(i), D=>wdata, Q=>registers_q_out(i));
   end generate reg_bank;
 
-   decoder: process(xgeth_waddr)
+   decoder: process(waddr)
    begin
      wen <= (others => '0');
       for i in 0 to REG_N-1 loop
@@ -85,4 +86,4 @@ begin
 
    rdata <= registers_q_out(to_integer(unsigned(raddr)));
 
-end behavioral;
+end arch_RegisterBank;

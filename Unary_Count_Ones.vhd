@@ -1,16 +1,16 @@
-COUNT ONES UNARY APPROACH
-This is a stable and non generic(yet!) version of a count ones circuit that 
-receives a 128 bits word and outputs an 8 bit value.
-The unary aproach showed a great reduce in area, shrinking the overall architecture 
-in 97% of íts original size, although it slowed the critical path in 50%.
+--COUNT ONES UNARY APPROACH
+--This is a stable and non generic(yet!) version of a count ones circuit that 
+--receives a 128 bits word and outputs an 8 bit value.
+--The unary aproach showed a great reduce in area, shrinking the overall architecture 
+--in 97% of íts original size, although it slowed the critical path in 50%.
 
-The ideia is to use a fulladder as a unary converter, reading 3 bit chuncks of 
-the 128 bit word, and outputing an X number of 2 bit values. The result of the 
-unary conversion is added in cascate to provide the correct output at the end.
+--The ideia is to use a fulladder as a unary converter, reading 3 bit chuncks of 
+--the 128 bit word, and outputing an X number of 2 bit values. The result of the 
+--unary conversion is added in cascate to provide the correct output at the end.
 
-The next step shall be the adition of a pipeline barrier to improve timing, 
-and the reconding of the architecture, in order to transform it in a generic 
-vhdl using 'if generate' statments
+--The next step shall be the adition of a pipeline barrier to improve timing, 
+--and the reconding of the architecture, in order to transform it in a generic 
+--vhdl using 'if generate' statments
 
 
 

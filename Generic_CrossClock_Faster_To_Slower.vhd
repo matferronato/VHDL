@@ -36,26 +36,38 @@ entity CC_Faster_Slower is
   signal metastable_bus  : std_logic_vector((DATA_SIZE*2)-1 downto 0);
   signal stable_bus      : std_logic_vector((DATA_SIZE*2)-1 downto 0);
   signal stc_counter_bus : stretcher_counter;
+  signal parity          : std_logic := '0';
 
 
 begin
+   parity_ctrl :process (clk_faster) -- allows spare time for counters to zero
+   begin
+     if clk_faster'event and clk_faster = '1' then
+      if parity = '0' then
+        parity <= '1';
+      else
+        parity <= '0';
+      end if;
+     end if;
+  end process;
+
 	 DATA_OUT_ATTRIBUTION : for i in 0 to (DATA_SIZE*2)-1 generate
 		data_out(i) <= stable_bus(i);
 	 end generate;
-	 
+
 	 FASTER_TO_SLOWER : for i in 0 to DATA_SIZE-1 generate
 
 		faster : process(clk_faster)
 		begin
 		  if rising_edge(clk_faster) then
-			 if data_in(i) = '1' then
+			 if data_in(i) = '1' and parity = '1' then
 				stc_counter_bus(i) <= COUNTER_STAGES;
 			 elsif stc_counter_bus(i) > 0 then
 				stc_counter_bus(i) <= stc_counter_bus(i) - 1;
 			 end if;
 		  end if;
 		end process;
-	
+
 		unstable_bus(i)  <= '1' when stc_counter_bus(i) > 0 else '0';
 		unstable_wire(i) <= unstable_bus(i);
 

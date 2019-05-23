@@ -1,37 +1,7 @@
-library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.std_logic_unsigned.all;
-use IEEE.numeric_std.all;
 
-library UNISIM;
-  use UNISIM.vcomponents.all;
-library UNIMACRO;
-  use unimacro.Vcomponents.all;
-
-  entity WRAPPER_FIFOS is
-             generic( 
-                      CTRL_SIZE    : integer := 0;
-                      CURRENT_SIZE : integer := 256;
-                      SYNC         : boolean := true);
-             port (
-                CLKA        : IN  std_logic;
-                CLKB        : IN  std_logic;
-                RST         : IN  std_logic;
-                DATA_IN     : IN  std_logic_vector(CURRENT_SIZE-1 downto 0);
-                DATA_OUT    : OUT std_logic_vector(CURRENT_SIZE-1 downto 0);
-                CTRL_IN     : IN  std_logic_vector(CTRL_SIZE-1 downto 0);
-                CTRL_OUT    : OUT  std_logic_vector(CTRL_SIZE-1 downto 0);
-                READ_DATA   : IN  std_logic;
-                WRITE_DATA  : IN  std_logic;
-                EMPTY       : OUT std_logic;
-                FULL        : OUT std_logic;
-                A_FULL      : OUT std_logic;
-                A_EMPTY     : OUT std_logic
-           );
-  end WRAPPER_FIFOS;
 
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
--- GENERIC SYNC FIFO
+-- GENERIC FIFO
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 library IEEE;
 use IEEE.std_logic_1164.all;

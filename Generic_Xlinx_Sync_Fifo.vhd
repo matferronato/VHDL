@@ -1,12 +1,7 @@
---Generic architecture to generate N + 1 clocked fifos
---This architecture generates N fifos according to the FIFO_N number.
---It provides another fifo to shift in time any control signal that might 
---be sent together with the data (like a start of package signal).
-
---In the next revision I would like to add more highlevel logic
---so the ctrl data can bundled together with normal data if there is enough space.
---Also, it would be great to add a block statment using 'if generate' to be able to
---choose between a dual clock fifo or a single clock one.
+--This architecture provides a generic sync fifo 
+--For a more complete generic architecture, please use the entity provided
+--in Generic_Xilinx_Fifo.vhd which can provide a dual clock or a one clock
+--fifo, and is able to run any number of input bits
 
 
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

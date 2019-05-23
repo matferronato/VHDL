@@ -14,8 +14,8 @@ library UNIMACRO;
   use unimacro.Vcomponents.all;
 
 entity GENERIC_FIFO is
-           generic(TARGET_SIZE  : integer := 64;
-                    CTRL_SIZE    : integer := 9;
+           generic(
+                    CTRL_SIZE    : integer := 0;
                     CURRENT_SIZE : integer := 256;
                     SYNC         : boolean := true);
            port (

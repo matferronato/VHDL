@@ -58,9 +58,6 @@ architecture ARCH_GENERIC_FIFO of GENERIC_FIFO is
   signal reduced_mod_vector  : std_logic_vector(31 downto 0) := x"0000000" & "000" & reduced_mod;
   signal reduced_mod_integer : integer := to_integer(unsigned(reduced_mod_vector));
 
-  signal test_1        : std_logic_vector(FIFO_N-1+reduced_mod_integer downto 0);
-  signal test_2        : std_logic_vector(FIFO_N-1+reduced_mod_integer downto 0);
-
   type   ctrl_table is array (0 to FIFO_N) of std_logic;
   signal fifo_empty   : ctrl_table;
   signal fifo_full    : ctrl_table;
@@ -88,10 +85,6 @@ architecture ARCH_GENERIC_FIFO of GENERIC_FIFO is
 
 
 BEGIN
-
-  test_generate : for l in 0 to FIFO_N-1 + reduced_mod_integer generate
-    test_1(l) <= test_1(l) or test_2(l);
-  end generate test_generate;
 
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 -- BREAK DATA

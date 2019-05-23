@@ -9,7 +9,7 @@ library UNIMACRO;
   use unimacro.Vcomponents.all;
 
   entity WRAPPER_FIFOS is
-             generic( --FIFO_N       : integer := 4;
+             generic( 
                       CTRL_SIZE    : integer := 0;
                       CURRENT_SIZE : integer := 256;
                       SYNC         : boolean := true);

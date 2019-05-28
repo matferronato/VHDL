@@ -1,5 +1,3 @@
-
-
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 -- GENERIC FIFO
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -15,7 +13,7 @@ library UNIMACRO;
 
 entity GENERIC_FIFO is
            generic(
-                    CTRL_SIZE    : integer := 0;
+                    CTRL_SIZE    : integer := 9;
                     CURRENT_SIZE : integer := 256;
                     SYNC         : boolean := true);
            port (
@@ -75,7 +73,8 @@ architecture ARCH_GENERIC_FIFO of GENERIC_FIFO is
   signal data_out_concat  : std_logic_vector(CURRENT_SIZE-1 downto 0);
 
   type   counter_table is array (0 to 1) of std_logic_vector(8 downto 0);
-  signal fifo_data_counter    : counter_table;
+  type   counter_fifos is array (0 to FIFO_N-1 + reduced_mod_integer) of counter_table;
+  signal fifo_data_counter    : counter_fifos;
 
   signal fifo_ctrl_in         : std_logic_vector(63 downto 0);
   signal fifo_ctrl_out        : std_logic_vector(63 downto 0);
@@ -118,9 +117,9 @@ Xilinx_Sync : if (SYNC) generate
       DO => data_out_slipt(i), -- Output data, width defined by DATA_WIDTH parameter
       EMPTY => fifo_empty(i), -- 1-bit output empty
       FULL => fifo_full(i), -- 1-bit output full
-      RDCOUNT => fifo_data_counter(0), -- Output read count, width determined by FIFO depth
+      RDCOUNT => fifo_data_counter(i)(0), -- Output read count, width determined by FIFO depth
       RDERR => open, -- 1-bit output read error
-      WRCOUNT => fifo_data_counter(1), -- Output write count, width determined by FIFO depth
+      WRCOUNT => fifo_data_counter(i)(1), -- Output write count, width determined by FIFO depth
       WRERR => open, -- 1-bit output write error
       CLK => CLKA, -- 1-bit input clock
       DI => data_in_slipt(i), -- Input data, width defined by DATA_WIDTH parameter
@@ -181,9 +180,9 @@ Xilinx_Dual_Clock : if (not SYNC) generate
         DO => data_out_slipt(i),              -- Output data, width defined by DATA_WIDTH parameter
         EMPTY => fifo_empty(i),               -- 1-bit output empty
         FULL =>  fifo_full(i),                -- 1-bit output full
-        RDCOUNT => fifo_data_counter(0),           -- Output read count, width determined by FIFO depth
+        RDCOUNT => fifo_data_counter(i)(0),           -- Output read count, width determined by FIFO depth
         RDERR => open,                    -- 1-bit output read error
-        WRCOUNT => fifo_data_counter(1),           -- Output write count, width determined by FIFO depth
+        WRCOUNT => fifo_data_counter(i)(1),           -- Output write count, width determined by FIFO depth
         WRERR => open,                    -- 1-bit output write error
         DI =>  data_in_slipt(i),  -- Input data, width defined by DATA_WIDTH parameter
         RDCLK => CLKA,                   -- 1-bit input read clock

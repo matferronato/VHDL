@@ -51,21 +51,21 @@ architecture ARCH_GENERIC_FIFO of GENERIC_FIFO is
   signal ALL_ZEROS_CTRL    : std_logic_vector((64 - CTRL_SIZE)-1 downto 0) := (others=>'0');
   signal ALL_ZEROS_DATA    : std_logic_vector((64 - MOD_FIFO)-1 downto 0) := (others=>'0');
 
-  signal std_logic_mod       : std_logic_vector(5 downto 0) :=  std_logic_vector(to_unsigned(MOD_FIFO, 6));
-  signal reduced_mod         : std_logic := or_reduce(std_logic_mod);
-  signal reduced_mod_vector  : std_logic_vector(31 downto 0) := x"0000000" & "000" & reduced_mod;
-  signal reduced_mod_integer : integer := to_integer(unsigned(reduced_mod_vector));
+  constant std_logic_mod       : std_logic_vector(5 downto 0) :=  std_logic_vector(to_unsigned(MOD_FIFO, 6));
+  constant reduced_mod         : std_logic := or_reduce(std_logic_mod);
+  constant reduced_mod_vector  : std_logic_vector(31 downto 0) := x"0000000" & "000" & reduced_mod;
+  constant reduced_mod_integer : integer := to_integer(unsigned(reduced_mod_vector));
 
-  type   ctrl_table is array (0 to FIFO_N) of std_logic;
-  signal fifo_empty   : ctrl_table;
-  signal fifo_full    : ctrl_table;
-  signal fifo_a_full  : ctrl_table;
-  signal fifo_a_empty : ctrl_table;
-
-  signal wire_empty : std_logic := '0';
-  signal wire_full : std_logic := '0';
-  signal wire_a_full : std_logic := '0';
-  signal wire_a_empty : std_logic := '0';
+  type   ctrl_table is array (0 to FIFO_N-1 + reduced_mod_integer) of std_logic;
+  signal sync_fifo_empty   : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
+  signal sync_fifo_full    : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
+  signal sync_fifo_a_full  : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
+  signal sync_fifo_a_empty : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
+  
+  signal dclk_fifo_empty   : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
+  signal dclk_fifo_full    : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
+  signal dclk_fifo_a_full  : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
+  signal dclk_fifo_a_empty : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0);
 
   type   data_table is array (0 to FIFO_N-1 + reduced_mod_integer) of std_logic_vector(63 downto 0);
   signal data_in_slipt    : data_table;
@@ -81,7 +81,15 @@ architecture ARCH_GENERIC_FIFO of GENERIC_FIFO is
   signal fifo_ctrl_counter_r  :std_logic_vector(8 downto 0);
   signal fifo_ctrl_counter_w  : std_logic_vector(8 downto 0);
 
+  function or_reduce_ctrl(a : std_logic_vector(FIFO_N-1 + reduced_mod_integer downto 0)) return std_logic is
+      variable ret : std_logic := '0';
+  begin
+      for i in a'range loop
+          ret := ret or a(i);
+      end loop;
 
+      return ret;
+  end function or_reduce_ctrl;
 
 BEGIN
 
@@ -103,6 +111,10 @@ BEGIN
 -- generates N-1 fifos
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Xilinx_Sync : if (SYNC) generate
+  --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  -- GENERATE SYNC FIFOS
+  -- generates N-1 fifos
+  --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   FIFO_SYNC_MACRO_DATA : for i in 0 to  (FIFO_N-1)+ reduced_mod_integer  generate
     FIFO_SYNC_MACRO_INST : FIFO_SYNC_MACRO
     generic map (
@@ -112,11 +124,11 @@ Xilinx_Sync : if (SYNC) generate
       DATA_WIDTH => 64, -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
       FIFO_SIZE => "36Kb") -- Target BRAM, "18Kb" or "36Kb"
     port map (
-      ALMOSTEMPTY => fifo_a_empty(i), -- 1-bit output almost empty
-      ALMOSTFULL => fifo_a_full(i), -- 1-bit output almost full
+      ALMOSTEMPTY => sync_fifo_a_empty(i), -- 1-bit output almost empty
+      ALMOSTFULL => sync_fifo_a_full(i), -- 1-bit output almost full
       DO => data_out_slipt(i), -- Output data, width defined by DATA_WIDTH parameter
-      EMPTY => fifo_empty(i), -- 1-bit output empty
-      FULL => fifo_full(i), -- 1-bit output full
+      EMPTY => sync_fifo_empty(i), -- 1-bit output empty
+      FULL => sync_fifo_full(i), -- 1-bit output full
       RDCOUNT => fifo_data_counter(i)(0), -- Output read count, width determined by FIFO depth
       RDERR => open, -- 1-bit output read error
       WRCOUNT => fifo_data_counter(i)(1), -- Output write count, width determined by FIFO depth
@@ -129,10 +141,10 @@ Xilinx_Sync : if (SYNC) generate
       );
     end generate FIFO_SYNC_MACRO_DATA;
 
---++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
--- GENERATE CTRL FIFOS
--- generates 1 ctrl fifos
---++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  -- GENERATE CTRL FIFOS
+  -- generates 1 ctrl fifos
+  --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   ctrl_sync_fifo : if (CTRL_SIZE /= 0) generate
     fifo_ctrl_in <= ALL_ZEROS_CTRL & CTRL_IN;
     CTRL_OUT     <= fifo_ctrl_out(CTRL_SIZE-1 downto 0);
@@ -145,11 +157,11 @@ Xilinx_Sync : if (SYNC) generate
         DATA_WIDTH => 64, -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
         FIFO_SIZE => "36Kb") -- Target BRAM, "18Kb" or "36Kb"
       port map (
-        ALMOSTEMPTY => fifo_a_empty(FIFO_N), -- 1-bit output almost empty
-        ALMOSTFULL => fifo_a_full(FIFO_N), -- 1-bit output almost full
+        ALMOSTEMPTY => open, -- 1-bit output almost empty
+        ALMOSTFULL => open, -- 1-bit output almost full
         DO => fifo_ctrl_out, -- Output data, width defined by DATA_WIDTH parameter
-        EMPTY => fifo_empty(FIFO_N), -- 1-bit output empty
-        FULL => fifo_full(FIFO_N), -- 1-bit output full
+        EMPTY => open, -- 1-bit output empty
+        FULL => open, -- 1-bit output full
         RDCOUNT => fifo_ctrl_counter_r , -- Output read count, width determined by FIFO depth
         RDERR => open, -- 1-bit output read error
         WRCOUNT => fifo_ctrl_counter_w, -- Output write count, width determined by FIFO depth
@@ -165,6 +177,10 @@ end generate Xilinx_Sync;
 
 
 Xilinx_Dual_Clock : if (not SYNC) generate
+    --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    -- GENERATE DUALCLOCK FIFOS
+    -- generates N-1 fifos
+    --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     FIFO_DUAL_CLOCK_MACRO_DATA : for i in 0 to  (FIFO_N-1)+reduced_mod_integer generate
       FIFO_DUAL_CLOCK_MACRO_INST : FIFO_DUALCLOCK_MACRO
       generic map (
@@ -175,11 +191,11 @@ Xilinx_Dual_Clock : if (not SYNC) generate
         FIFO_SIZE => "36Kb",              -- Target BRAM, "18Kb" or "36Kb"
         FIRST_WORD_FALL_THROUGH => FALSE) -- Sets the FIFO FWFT to TRUE or FALSE
       port map (
-        ALMOSTEMPTY => fifo_a_empty(i),       -- 1-bit output almost empty
-        ALMOSTFULL => fifo_a_full(i),         -- 1-bit output almost full
+        ALMOSTEMPTY => dclk_fifo_a_empty(i),       -- 1-bit output almost empty
+        ALMOSTFULL => dclk_fifo_a_full(i),         -- 1-bit output almost full
         DO => data_out_slipt(i),              -- Output data, width defined by DATA_WIDTH parameter
-        EMPTY => fifo_empty(i),               -- 1-bit output empty
-        FULL =>  fifo_full(i),                -- 1-bit output full
+        EMPTY => dclk_fifo_empty(i),               -- 1-bit output empty
+        FULL =>  dclk_fifo_full(i),                -- 1-bit output full
         RDCOUNT => fifo_data_counter(i)(0),           -- Output read count, width determined by FIFO depth
         RDERR => open,                    -- 1-bit output read error
         WRCOUNT => fifo_data_counter(i)(1),           -- Output write count, width determined by FIFO depth
@@ -192,8 +208,13 @@ Xilinx_Dual_Clock : if (not SYNC) generate
         WREN => WRITE_DATA                -- 1-bit input write enable
       );
     end generate FIFO_DUAL_CLOCK_MACRO_DATA;
+    
+    --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    -- GENERATE CTRL FIFOS
+    -- generates 1 ctrl fifos
+    --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-  ctrl_dual_clock_fifo : if (CTRL_SIZE /= 0) generate
+    ctrl_dual_clock_fifo : if (CTRL_SIZE /= 0) generate
       fifo_ctrl_in <= ALL_ZEROS_CTRL & CTRL_IN;
       CTRL_OUT     <= fifo_ctrl_out(CTRL_SIZE-1 downto 0);
 
@@ -206,11 +227,11 @@ Xilinx_Dual_Clock : if (not SYNC) generate
       FIFO_SIZE => "36Kb",              -- Target BRAM, "18Kb" or "36Kb"
       FIRST_WORD_FALL_THROUGH => FALSE) -- Sets the FIFO FWFT to TRUE or FALSE
     port map (
-      ALMOSTEMPTY => fifo_a_empty(FIFO_N),       -- 1-bit output almost empty
-      ALMOSTFULL => fifo_a_full(FIFO_N),         -- 1-bit output almost full
+      ALMOSTEMPTY => open,       -- 1-bit output almost empty
+      ALMOSTFULL => open,         -- 1-bit output almost full
       DO => fifo_ctrl_out,              -- Output data, width defined by DATA_WIDTH parameter
-      EMPTY => fifo_empty(FIFO_N),               -- 1-bit output empty
-      FULL =>  fifo_full(FIFO_N),                -- 1-bit output full
+      EMPTY => open,               -- 1-bit output empty
+      FULL =>  open,                -- 1-bit output full
       RDCOUNT => fifo_ctrl_counter_r,           -- Output read count, width determined by FIFO depth
       RDERR => open,                    -- 1-bit output read error
       WRCOUNT => fifo_ctrl_counter_w,           -- Output write count, width determined by FIFO depth
@@ -241,19 +262,20 @@ end generate Xilinx_Dual_Clock;
 
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 -- FIFO CTRL SIGNALS
--- execute bitwise or of the 4 fifos ctrl output signals
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Xilinx_Sync_output : if (SYNC) generate
+    EMPTY   <= or_reduce_ctrl(sync_fifo_empty);
+    FULL    <= or_reduce_ctrl(sync_fifo_full);
+    A_EMPTY <= or_reduce_ctrl(sync_fifo_a_empty);
+    A_FULL  <= or_reduce_ctrl(sync_fifo_a_full);
+end generate Xilinx_Sync_output;
 
-    EMPTY   <= wire_empty;
-    FULL    <= wire_full;
-    A_EMPTY <= wire_a_full;
-    A_FULL  <= wire_a_empty;
+Xilinx_Dual_Clock_output : if (not SYNC) generate
+    EMPTY   <= or_reduce_ctrl(dclk_fifo_empty);
+    FULL    <= or_reduce_ctrl(dclk_fifo_full);
+    A_EMPTY <= or_reduce_ctrl(dclk_fifo_a_empty);
+    A_FULL  <= or_reduce_ctrl(dclk_fifo_a_full);
+end generate Xilinx_Dual_Clock_output;
 
-    opertation_or : for i in 0 to  FIFO_N-1 generate
-      wire_empty   <= wire_empty or fifo_empty(i);
-      wire_full    <= wire_full or fifo_full(i);
-      wire_a_full  <= wire_a_full or fifo_a_empty(i);
-      wire_a_empty <= wire_a_empty or fifo_a_full(i);
-    end generate;
 
 end ARCH_GENERIC_FIFO;

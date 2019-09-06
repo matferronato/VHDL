@@ -45,4 +45,4 @@ architecture arch_Hex2Str of Hex2Str is
 
 BEGIN
 
-end Hex2Str;
+end arch_Hex2Str;

@@ -66,7 +66,7 @@ begin
     -- FIFOS
     -------------------------------------------------------------------------------
 
-    reset_fifo <= <= '1','0'  after 35 ns;
+    reset_fifo <= '1','0'  after 35 ns;
 
     SYNC_RD_WR : process(clk_312, reset_fifo)
     begin

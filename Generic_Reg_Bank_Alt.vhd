@@ -14,7 +14,7 @@ entity tester_regbank is
       reg_raddr       : in std_logic_vector(6 downto 0);
       reg_wdata       : in std_logic_vector(31 downto 0);
       reg_rdata       : out std_logic_vector(31 downto 0);
-      reg_wen         : in std_logic;
+      reg_wen         : in std_logic
 
 	);
 end tester_regbank;
